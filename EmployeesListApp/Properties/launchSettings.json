@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EmployeesListApp": {
+      "commandName": "Project",
+      "commandLineArgs": "-getall Id:10"
+    }
+  }
+}

@@ -1,4 +1,7 @@
-﻿namespace EmployeesListApp
+﻿using System.Text;
+using System.Text.Json.Serialization;
+
+namespace EmployeesListApp.Models
 {
     public class EmployeesList
     {
@@ -10,11 +13,15 @@
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
+        [JsonPropertyName("Salary")]
         public decimal SalaryPerHour { get; set; }
 
         public override string ToString()
         {
-            return $"{{ Id: {Id}, FirstName: {FirstName}, LastName: {LastName}, SalaryPerHour: {SalaryPerHour} }}";
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"{{ Id = {Id}, FirstName = {FirstName}, LastName = {LastName}, SalaryPerHour = {SalaryPerHour} }}");
+            return sb.ToString();
         }
     }
 }

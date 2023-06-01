@@ -1,4 +1,5 @@
-﻿using EmployeesListApp.Services.Interfaces;
+﻿using EmployeesListApp.Models;
+using EmployeesListApp.Services.Interfaces;
 using System.Text.Json;
 
 namespace EmployeesListApp.Services
@@ -6,14 +7,16 @@ namespace EmployeesListApp.Services
     public class EmployeeService : IEmployeeService
     {
         private readonly string _jsonFilePath;
-
         private int _lastId = 0;
+        public event IEmployeeService.EventHandler ErrorHandler;
 
         public EmployeeService(string jsonFilePath)
         {
             if (jsonFilePath == null)
                 throw new ArgumentNullException(nameof(jsonFilePath));
             _jsonFilePath = jsonFilePath;
+            if (!File.Exists(_jsonFilePath))
+                UpdateJsonFile(new EmployeesList { Employees = new List<Employee> { } });
             var employees = GetAll().Employees;
             if (employees.Count > 0)
                 _lastId = employees.Max(x => x.Id);
@@ -21,11 +24,7 @@ namespace EmployeesListApp.Services
 
         public EmployeesList GetAll()
         {
-            if (!File.Exists(_jsonFilePath))
-                File.Create(_jsonFilePath);
             string json = File.ReadAllText(_jsonFilePath);
-            if (json == "")
-                return new EmployeesList { Employees = new List<Employee> { } };
             return JsonSerializer.Deserialize<EmployeesList>(json);
         }
 
@@ -37,21 +36,25 @@ namespace EmployeesListApp.Services
             employee.Id = _lastId;
             var employees = GetAll();
             employees.Employees.Add(employee);
-            File.WriteAllText(_jsonFilePath, JsonSerializer.Serialize(employees));
+            UpdateJsonFile(employees);
         }
 
         public void Delete(int id)
         {
             var employees = GetAll();
             var deletedEmployee = employees.Employees.FirstOrDefault(x => x.Id == id);
+            if (deletedEmployee == null)
+                OnError(ErrorMessage(id));
             employees.Employees.Remove(deletedEmployee);
-            File.WriteAllText(_jsonFilePath, JsonSerializer.Serialize(employees));
+            UpdateJsonFile(employees);
         }
 
         public Employee Get(int id)
         {
             var employees = GetAll();
             var employee = employees.Employees.FirstOrDefault(x => x.Id == id);
+            if (employee == null)
+                OnError(ErrorMessage(id));
             return employee;
         }
 
@@ -59,14 +62,28 @@ namespace EmployeesListApp.Services
         {
             var employees = GetAll();
             var updatedEmployee = employees.Employees.FirstOrDefault(x => x.Id == id);
-            employees.Employees.Where(x => x.Id == id).Select(x => 
-            { 
+            if (updatedEmployee == null)
+                OnError(ErrorMessage(id));
+            employees.Employees.Where(x => x.Id == id).Select(x =>
+            {
                 x.FirstName = employee.FirstName;
                 x.LastName = employee.LastName;
                 x.SalaryPerHour = employee.SalaryPerHour;
-                return x; 
+                return x;
             }).ToList();
-            File.WriteAllText(_jsonFilePath, JsonSerializer.Serialize(employees));
+            UpdateJsonFile(employees);
         }
+
+        protected virtual void OnError(string message)
+        {
+            ErrorHandler.Invoke(message);
+        }
+
+        private void UpdateJsonFile<TValue>(TValue value)
+        {
+            File.WriteAllText(_jsonFilePath, JsonSerializer.Serialize(value));
+        }
+
+        private string ErrorMessage(int id) => $"Employee with id: {id} does not exist";
     }
 }
