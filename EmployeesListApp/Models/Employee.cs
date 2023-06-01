@@ -23,5 +23,6 @@ namespace EmployeesListApp.Models
             sb.Append($"{{ Id = {Id}, FirstName = {FirstName}, LastName = {LastName}, SalaryPerHour = {SalaryPerHour} }}");
             return sb.ToString();
         }
+
     }
 }

@@ -6,7 +6,7 @@ namespace EmployeesListApp.Services.Interfaces
     {
         public Employee Get(int id);
         public EmployeesList GetAll();
-        public void Add(Employee employee);
+        public int Add(Employee employee);
         public void Update(int id, Employee employee);
         public void Delete(int id);
         public event EventHandler ErrorHandler;

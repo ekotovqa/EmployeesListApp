@@ -25,10 +25,13 @@ namespace EmployeesListApp.Services
         public EmployeesList GetAll()
         {
             string json = File.ReadAllText(_jsonFilePath);
+            if (string.IsNullOrEmpty(json))
+                UpdateJsonFile(new EmployeesList { Employees = new List<Employee> { } });
+            json = File.ReadAllText(_jsonFilePath);
             return JsonSerializer.Deserialize<EmployeesList>(json);
         }
 
-        public void Add(Employee employee)
+        public int Add(Employee employee)
         {
             if (employee == null)
                 throw new ArgumentNullException(nameof(employee));
@@ -37,6 +40,7 @@ namespace EmployeesListApp.Services
             var employees = GetAll();
             employees.Employees.Add(employee);
             UpdateJsonFile(employees);
+            return employee.Id;
         }
 
         public void Delete(int id)
