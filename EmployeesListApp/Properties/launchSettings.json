@@ -2,7 +2,7 @@
   "profiles": {
     "EmployeesListApp": {
       "commandName": "Project",
-      "commandLineArgs": "-getall Id:10"
+      "commandLineArgs": "-get Id:4"
     }
   }
 }

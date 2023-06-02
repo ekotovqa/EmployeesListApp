@@ -11,11 +11,9 @@ namespace EmployeesListApp.Services
         private readonly AppParams _appParams;
         private readonly EmployeeService _employeeService;
 
-        public ConsoleAppService(string[] appArgs)
-        {
-            if (appArgs.Count() == 0)
-                throw new ArgumentNullException(nameof(appArgs));
-            _appParams = Convert(appArgs);         
+        public ConsoleAppService()
+        {           
+            _appParams = GetAppParams();         
             _employeeService = new EmployeeService(ConfigurationManager.AppSettings["jsonFilePath"]);
             _employeeService.ErrorHandler += ConsoleAppErrorHandler;
         }
@@ -27,6 +25,11 @@ namespace EmployeesListApp.Services
 
         public void Run()
         {
+            if (_appParams == null)
+            {
+                ConsoleAppErrorHandler("Invalid app params");
+                return;
+            }
             switch (_appParams.Method)
             {
                 case "-add":
@@ -52,22 +55,43 @@ namespace EmployeesListApp.Services
             }
         }
 
-        private AppParams Convert(string[] args)
+        private AppParams GetAppParams()
         {
+            // TODO parameter case insensitivity
+            // -add Id:5 FirstName:John LastName:Doe Salary:100.50 
+            // Сorrect kind of parameters
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Count() == 1)
+                return null;
             StringBuilder sb = new StringBuilder();
-            sb.Append($"{{\"Method\" : \"{args[0]}\", \"Employee\" : {{");
-            for (int i = 1; i < args.Count(); i++)
+            if (args.Count() == 2)
             {
-                var arg = args[i].Split(':');
-                if (arg[0] == "Salary" || arg[0] == "Id")
-                {
-                    sb.Append($"\"{arg[0]}\" : {arg[1]}, ");
-                    continue;
-                }
-                sb.Append($"\"{arg[0]}\" : \"{arg[1]}\", ");
+                sb.Append($"{{\"Method\" : \"{args[1]}\", \"Employee\" : {{}}}}");                
             }
-            sb.Remove(sb.Length - 2, 2).Append("}}");
-            return JsonSerializer.Deserialize<AppParams>(sb.ToString());
+            else
+            {
+                sb.Append($"{{\"Method\" : \"{args[1]}\", \"Employee\" : {{");
+                for (int i = 2; i < args.Count(); i++)
+                {
+                    var arg = args[i].Split(':');
+                    if (arg[0] == "Salary" || arg[0] == "Id")
+                    {
+                        sb.Append($"\"{arg[0]}\" : {arg[1]}, ");
+                        continue;
+                    }
+                    sb.Append($"\"{arg[0]}\" : \"{arg[1]}\", ");
+                }
+                sb.Remove(sb.Length - 2, 2).Append("}}");
+            }                
+            try
+            {
+                return JsonSerializer.Deserialize<AppParams>(sb.ToString());
+            }
+            catch (Exception)
+            {
+                return null;
+                throw new Exception("Application settings deserialization error");
+            }           
         }
     }
 }
